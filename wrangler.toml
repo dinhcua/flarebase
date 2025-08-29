@@ -1,0 +1,34 @@
+name = "flarebase"
+compatibility_date = "2025-01-28"
+main = "src/index.ts"
+workers_dev = true
+
+[vars]
+JWT_SECRET = "change_this_in_production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "flarebase"
+database_id = "YOUR_D1_DATABASE_ID"
+
+[[kv_namespaces]]
+binding = "flarebase_KV"
+id = "YOUR_KV_NAMESPACE_ID"
+preview_id = "YOUR_PREVIEW_KV_NAMESPACE_ID"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "flarebase-files"
+preview_bucket_name = "flarebase-files-dev"
+
+[[durable_objects.bindings]]
+name = "flarebase_REALTIME"
+class_name = "RealtimeSubscription"
+
+[[durable_objects.bindings]]
+name = "flarebase_PRESENCE"
+class_name = "UserPresence"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RealtimeSubscription", "UserPresence"]

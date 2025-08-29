@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>flarebase Demo</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .section {
+        background: #f5f5f5;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+      }
+      .form-group {
+        margin: 10px 0;
+      }
+      input,
+      textarea,
+      button,
+      select {
+        padding: 8px;
+        margin: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      .output {
+        background: #e9ecef;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        white-space: pre-wrap;
+        font-family: monospace;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔥 flarebase Demo</h1>
+    <p>Demo client để test các tính năng của flarebase</p>
+
+    <!-- Configuration -->
+    <div class="section">
+      <h2>⚙️ Cấu hình</h2>
+      <div class="form-group">
+        <label>Base URL:</label>
+        <input
+          type="text"
+          id="baseUrl"
+          value="https://your-worker.your-account.workers.dev"
+          style="width: 400px"
+        />
+      </div>
+      <div class="form-group">
+        <label>JWT Token:</label>
+        <input
+          type="text"
+          id="token"
+          placeholder="Sẽ được tự động điền sau khi login"
+          style="width: 400px"
+        />
+      </div>
+      <button onclick="initClient()">Khởi tạo Client</button>
+      <div id="configOutput" class="output"></div>
+    </div>
+
+    <!-- Authentication -->
+    <div class="section">
+      <h2>🔐 Xác thực</h2>
+      <div class="form-group">
+        <input type="email" id="email" placeholder="Email" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <input type="text" id="name" placeholder="Name (cho register)" />
+      </div>
+      <div class="form-group">
+        <button onclick="register()">Đăng ký</button>
+        <button onclick="login()">Đăng nhập</button>
+        <button onclick="getMe()">Lấy thông tin user</button>
+      </div>
+      <div id="authOutput" class="output"></div>
+    </div>
+
+    <!-- Collections -->
+    <div class="section">
+      <h2>📚 Collections</h2>
+      <div class="form-group">
+        <input
+          type="text"
+          id="collectionName"
+          placeholder="Tên collection"
+          value="posts"
+        />
+        <button onclick="createCollection()">Tạo Collection</button>
+        <button onclick="listCollections()">Danh sách Collections</button>
+      </div>
+      <div id="collectionsOutput" class="output"></div>
+    </div>
+
+    <!-- Records -->
+    <div class="section">
+      <h2>📝 Records</h2>
+      <div class="form-group">
+        <select id="recordCollection">
+          <option value="posts">posts</option>
+        </select>
+        <button onclick="listRecords()">Danh sách Records</button>
+      </div>
+      <div class="form-group">
+        <input
+          type="text"
+          id="recordTitle"
+          placeholder="Tiêu đề"
+          value="Hello World"
+        />
+        <textarea id="recordContent" placeholder="Nội dung">
+Đây là bài viết đầu tiên của tôi!</textarea
+        >
+        <label>
+          <input type="checkbox" id="recordPublished" checked /> Published
+        </label>
+        <button onclick="createRecord()">Tạo Record</button>
+      </div>
+      <div class="form-group">
+        <input type="text" id="recordId" placeholder="Record ID" />
+        <button onclick="getRecord()">Lấy Record</button>
+        <button onclick="updateRecord()">Cập nhật Record</button>
+        <button onclick="deleteRecord()">Xóa Record</button>
+      </div>
+      <div id="recordsOutput" class="output"></div>
+    </div>
+
+    <!-- File Storage -->
+    <div class="section">
+      <h2>📁 File Storage</h2>
+      <div class="form-group">
+        <input type="file" id="fileInput" />
+        <label> <input type="checkbox" id="isPublic" checked /> Public </label>
+        <input
+          type="text"
+          id="folder"
+          placeholder="Folder (optional)"
+          value="uploads"
+        />
+        <button onclick="uploadFile()">Upload File</button>
+      </div>
+      <div class="form-group">
+        <button onclick="listFiles()">Danh sách Files</button>
+      </div>
+      <div id="storageOutput" class="output"></div>
+    </div>
+
+    <!-- Realtime -->
+    <div class="section">
+      <h2>⚡ Realtime</h2>
+      <div class="form-group">
+        <input
+          type="text"
+          id="realtimeCollection"
+          placeholder="Collection name"
+          value="posts"
+        />
+        <button onclick="subscribeRealtime()">Subscribe</button>
+        <button onclick="unsubscribeRealtime()">Unsubscribe</button>
+      </div>
+      <div id="realtimeOutput" class="output"></div>
+    </div>
+
+    <!-- Settings -->
+    <div class="section">
+      <h2>⚙️ Settings</h2>
+      <div class="form-group">
+        <button onclick="getSettings()">Lấy Settings</button>
+        <button onclick="resetSettings()">Reset Settings</button>
+      </div>
+      <div id="settingsOutput" class="output"></div>
+    </div>
+
+    <script>
+      // Import flarebase client (trong thực tế bạn sẽ import từ npm package)
+      // Ở đây chúng ta sẽ copy code trực tiếp
+
+      // Global variables
+      let client = null;
+      let realtimeSubscription = null;
+
+      // Initialize client
+      function initClient() {
+        const baseUrl = document.getElementById("baseUrl").value;
+        const token = document.getElementById("token").value;
+
+        // Simplified client for demo
+        client = {
+          baseUrl: baseUrl,
+          token: token,
+
+          async request(url, options = {}) {
+            const headers = {
+              "Content-Type": "application/json",
+              ...(this.token && { Authorization: `Bearer ${this.token}` }),
+              ...(options.headers || {}),
+            };
+
+            if (options.body instanceof FormData) {
+              delete headers["Content-Type"];
+            }
+
+            const response = await fetch(`${this.baseUrl}${url}`, {
+              ...options,
+              headers,
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.error || `HTTP ${response.status}`);
+            }
+
+            if (response.status === 204) return null;
+            return response.json();
+          },
+        };
+
+        displayOutput(
+          "configOutput",
+          `Client initialized for ${baseUrl}`,
+          "success"
+        );
+      }
+
+      // Auth functions
+      async function register() {
+        try {
+          const email = document.getElementById("email").value;
+          const password = document.getElementById("password").value;
+          const name = document.getElementById("name").value;
+
+          const result = await client.request("/api/auth/register", {
+            method: "POST",
+            body: JSON.stringify({ email, password, name }),
+          });
+
+          client.token = result.token;
+          document.getElementById("token").value = result.token;
+
+          displayOutput(
+            "authOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("authOutput", error.message, "error");
+        }
+      }
+
+      async function login() {
+        try {
+          const email = document.getElementById("email").value;
+          const password = document.getElementById("password").value;
+
+          const result = await client.request("/api/auth/login", {
+            method: "POST",
+            body: JSON.stringify({ email, password }),
+          });
+
+          client.token = result.token;
+          document.getElementById("token").value = result.token;
+
+          displayOutput(
+            "authOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("authOutput", error.message, "error");
+        }
+      }
+
+      async function getMe() {
+        try {
+          const result = await client.request("/api/auth/me");
+          displayOutput(
+            "authOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("authOutput", error.message, "error");
+        }
+      }
+
+      // Collections functions
+      async function createCollection() {
+        try {
+          const name = document.getElementById("collectionName").value;
+          const schema = {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              content: { type: "string" },
+              published: { type: "boolean" },
+            },
+          };
+
+          const result = await client.request("/api/collections", {
+            method: "POST",
+            body: JSON.stringify({ name, schema: JSON.stringify(schema) }),
+          });
+
+          displayOutput(
+            "collectionsOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("collectionsOutput", error.message, "error");
+        }
+      }
+
+      async function listCollections() {
+        try {
+          const result = await client.request("/api/collections");
+          displayOutput(
+            "collectionsOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("collectionsOutput", error.message, "error");
+        }
+      }
+
+      // Records functions
+      async function listRecords() {
+        try {
+          const collection = document.getElementById("recordCollection").value;
+          const result = await client.request(
+            `/api/collections/${collection}/records`
+          );
+          displayOutput(
+            "recordsOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("recordsOutput", error.message, "error");
+        }
+      }
+
+      async function createRecord() {
+        try {
+          const collection = document.getElementById("recordCollection").value;
+          const title = document.getElementById("recordTitle").value;
+          const content = document.getElementById("recordContent").value;
+          const published = document.getElementById("recordPublished").checked;
+
+          const result = await client.request(
+            `/api/collections/${collection}/records`,
+            {
+              method: "POST",
+              body: JSON.stringify({ title, content, published }),
+            }
+          );
+
+          document.getElementById("recordId").value = result.id;
+          displayOutput(
+            "recordsOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("recordsOutput", error.message, "error");
+        }
+      }
+
+      async function getRecord() {
+        try {
+          const collection = document.getElementById("recordCollection").value;
+          const id = document.getElementById("recordId").value;
+
+          const result = await client.request(
+            `/api/collections/${collection}/records/${id}`
+          );
+          displayOutput(
+            "recordsOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("recordsOutput", error.message, "error");
+        }
+      }
+
+      async function updateRecord() {
+        try {
+          const collection = document.getElementById("recordCollection").value;
+          const id = document.getElementById("recordId").value;
+          const title = document.getElementById("recordTitle").value;
+          const content = document.getElementById("recordContent").value;
+          const published = document.getElementById("recordPublished").checked;
+
+          const result = await client.request(
+            `/api/collections/${collection}/records/${id}`,
+            {
+              method: "PUT",
+              body: JSON.stringify({ title, content, published }),
+            }
+          );
+
+          displayOutput(
+            "recordsOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("recordsOutput", error.message, "error");
+        }
+      }
+
+      async function deleteRecord() {
+        try {
+          const collection = document.getElementById("recordCollection").value;
+          const id = document.getElementById("recordId").value;
+
+          await client.request(`/api/collections/${collection}/records/${id}`, {
+            method: "DELETE",
+          });
+
+          displayOutput(
+            "recordsOutput",
+            "Record deleted successfully",
+            "success"
+          );
+        } catch (error) {
+          displayOutput("recordsOutput", error.message, "error");
+        }
+      }
+
+      // Storage functions
+      async function uploadFile() {
+        try {
+          const fileInput = document.getElementById("fileInput");
+          const file = fileInput.files[0];
+
+          if (!file) {
+            throw new Error("Please select a file");
+          }
+
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append(
+            "isPublic",
+            document.getElementById("isPublic").checked
+          );
+          formData.append("folder", document.getElementById("folder").value);
+
+          const result = await client.request("/api/storage", {
+            method: "POST",
+            body: formData,
+            headers: {},
+          });
+
+          displayOutput(
+            "storageOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("storageOutput", error.message, "error");
+        }
+      }
+
+      async function listFiles() {
+        try {
+          const result = await client.request("/api/storage");
+          displayOutput(
+            "storageOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("storageOutput", error.message, "error");
+        }
+      }
+
+      // Realtime functions
+      function subscribeRealtime() {
+        try {
+          const collection =
+            document.getElementById("realtimeCollection").value;
+          const wsUrl = client.baseUrl.replace("http", "ws") + "/api/realtime";
+
+          const ws = new WebSocket(wsUrl);
+
+          ws.onopen = () => {
+            ws.send(
+              JSON.stringify({
+                type: "subscribe",
+                collection: collection,
+              })
+            );
+            displayOutput(
+              "realtimeOutput",
+              `Subscribed to ${collection}`,
+              "success"
+            );
+          };
+
+          ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            displayOutput(
+              "realtimeOutput",
+              `📡 ${JSON.stringify(data, null, 2)}`,
+              "success"
+            );
+          };
+
+          ws.onerror = (error) => {
+            displayOutput(
+              "realtimeOutput",
+              `WebSocket error: ${error}`,
+              "error"
+            );
+          };
+
+          realtimeSubscription = ws;
+        } catch (error) {
+          displayOutput("realtimeOutput", error.message, "error");
+        }
+      }
+
+      function unsubscribeRealtime() {
+        if (realtimeSubscription) {
+          realtimeSubscription.close();
+          realtimeSubscription = null;
+          displayOutput(
+            "realtimeOutput",
+            "Unsubscribed from realtime",
+            "success"
+          );
+        }
+      }
+
+      // Settings functions
+      async function getSettings() {
+        try {
+          const result = await client.request("/api/settings");
+          displayOutput(
+            "settingsOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("settingsOutput", error.message, "error");
+        }
+      }
+
+      async function resetSettings() {
+        try {
+          const result = await client.request("/api/settings/reset", {
+            method: "POST",
+          });
+          displayOutput(
+            "settingsOutput",
+            JSON.stringify(result, null, 2),
+            "success"
+          );
+        } catch (error) {
+          displayOutput("settingsOutput", error.message, "error");
+        }
+      }
+
+      // Helper function
+      function displayOutput(elementId, message, type = "") {
+        const element = document.getElementById(elementId);
+        element.textContent = message;
+        element.className = `output ${type}`;
+      }
+
+      // Initialize on page load
+      window.onload = function () {
+        initClient();
+      };
+    </script>
+  </body>
+</html>
