@@ -1,60 +1,54 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import flarebase from 'flarebase';
-import { User } from '@/types/models';
+import { useState, useEffect } from "react";
+import { getFlarebaseClient } from "@/lib/flarebase";
+import { User } from "@/types/models";
 
 export default function ProfilePage() {
-  const { data: session } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchUserProfile() {
-      if (!session?.accessToken) {
-        setLoading(false);
-        return;
-      }
-
       try {
-        const client = new flarebase(
-          'https://your-worker.your-account.workers.dev',
-          session.accessToken
-        );
+        const flarebase = getFlarebaseClient();
 
-        // Sử dụng generic với User tùy chỉnh
-        const currentUser = await client.auth.getCurrentUser<User>();
+        // Check if user is authenticated
+        if (!flarebase.auth.isAuthenticated()) {
+          setLoading(false);
+          return;
+        }
+
+        // Get current user
+        const currentUser = await flarebase.auth.getCurrentUser();
         setUser(currentUser);
       } catch (error) {
-        console.error('Lỗi khi lấy thông tin người dùng:', error);
+        console.error("Lỗi khi lấy thông tin người dùng:", error);
       } finally {
         setLoading(false);
       }
     }
 
     fetchUserProfile();
-  }, [session]);
+  }, []);
 
   // Hàm cập nhật thông tin người dùng
   const updateProfile = async (data: Partial<User>) => {
-    if (!session?.accessToken || !user) return;
+    if (!user) return;
 
     try {
-      const client = new flarebase(
-        'https://your-worker.your-account.workers.dev',
-        session.accessToken
-      );
+      const flarebase = getFlarebaseClient();
 
       // Sử dụng generic User cho collection system_users
-      const updatedUser = await client.collection<User>('system_users')
+      const updatedUser = await flarebase
+        .collection<User>("system_users")
         .update(user.id, data);
-      
+
       setUser(updatedUser);
-      alert('Cập nhật thông tin thành công!');
+      alert("Cập nhật thông tin thành công!");
     } catch (error) {
-      console.error('Lỗi khi cập nhật thông tin:', error);
-      alert('Cập nhật thông tin thất bại. Vui lòng thử lại.');
+      console.error("Lỗi khi cập nhật thông tin:", error);
+      alert("Cập nhật thông tin thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -63,7 +57,11 @@ export default function ProfilePage() {
   }
 
   if (!user) {
-    return <div className="container mx-auto p-4">Vui lòng đăng nhập để xem trang này.</div>;
+    return (
+      <div className="container mx-auto p-4">
+        Vui lòng đăng nhập để xem trang này.
+      </div>
+    );
   }
 
   return (
@@ -83,14 +81,18 @@ export default function ProfilePage() {
           />
         </div>
 
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          const form = e.target as HTMLFormElement;
-          const name = (form.elements.namedItem('name') as HTMLInputElement).value;
-          const bio = (form.elements.namedItem('bio') as HTMLTextAreaElement).value;
-          
-          updateProfile({ name, bio });
-        }}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const form = e.target as HTMLFormElement;
+            const name = (form.elements.namedItem("name") as HTMLInputElement)
+              .value;
+            const bio = (form.elements.namedItem("bio") as HTMLTextAreaElement)
+              .value;
+
+            updateProfile({ name, bio });
+          }}
+        >
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
               Họ và tên

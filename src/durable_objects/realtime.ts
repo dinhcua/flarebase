@@ -1,5 +1,15 @@
 import { RealtimeEvent } from "../types";
-import "../types/cloudflare";
+
+// Cloudflare Workers global types
+declare global {
+  // class WebSocketPair {
+  //   0: WebSocket;
+  //   1: WebSocket;
+  // }
+  interface WebSocket {
+    accept(): void;
+  }
+}
 
 export class RealtimeSubscription {
   private sessions: Map<string, WebSocket> = new Map();
@@ -28,7 +38,10 @@ export class RealtimeSubscription {
     }
 
     const webSocketPair = new WebSocketPair();
-    const [client, server] = Object.values(webSocketPair) as [WebSocket, WebSocket];
+    const [client, server] = Object.values(webSocketPair) as [
+      WebSocket,
+      WebSocket
+    ];
 
     server.accept();
 
@@ -172,7 +185,8 @@ export class RealtimeSubscription {
 
       for (const sessionId of subscribers) {
         const session = this.sessions.get(sessionId);
-        if (session && session.readyState === 1) { // WebSocket.OPEN
+        if (session && session.readyState === 1) {
+          // WebSocket.OPEN
           try {
             session.send(message);
             delivered++;

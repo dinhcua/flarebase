@@ -1,21 +1,13 @@
-// Global types for Cloudflare Workers
-declare global {
-  class WebSocketPair {
-    0: WebSocket;
-    1: WebSocket;
-  }
-}
-
 // Cloudflare Worker Environment Bindings
 export interface Bindings {
   // D1 Database
-  DB: any; // D1Database from Cloudflare Workers
+  flarebase: any; // D1Database from Cloudflare Workers
 
   // KV Storage
   flarebase_KV: any; // KVNamespace from Cloudflare Workers
 
-  // R2 Storage
-  R2_BUCKET: any; // R2Bucket from Cloudflare Workers
+  // R2 Storage (optional - needs to be enabled in dashboard)
+  R2_BUCKET?: any; // R2Bucket from Cloudflare Workers
 
   // Durable Objects
   flarebase_REALTIME: any; // DurableObjectNamespace from Cloudflare Workers
@@ -23,6 +15,8 @@ export interface Bindings {
 
   // Environment Variables
   JWT_SECRET: string;
+  ADMIN_EMAIL?: string;
+  ADMIN_PASSWORD?: string;
 }
 
 // User types

@@ -4,9 +4,8 @@ const nextConfig = {
     appDir: true,
   },
   images: {
-    domains: ["your-worker.your-account.workers.dev"],
+    domains: ["flarebase.kuquaysut.workers.dev"],
   },
 };
 
 module.exports = nextConfig;
-

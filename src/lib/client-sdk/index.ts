@@ -3,40 +3,21 @@
  * TypeScript client for interacting with flarebase backend
  */
 
-export interface FlarebaseConfig {
-  baseUrl: string;
-  token?: string;
-  timeout?: number;
-}
+import type {
+  FlarebaseConfig,
+  ListOptions,
+  ListResponse,
+  Collection,
+  User,
+  FileRecord,
+  AuthResponse,
+  UploadOptions,
+  CreateCollectionData,
+  UpdateCollectionData,
+  FlarebaseClient,
+} from "@/types/flarebase";
 
-export interface ListOptions {
-  page?: number;
-  perPage?: number;
-  sort?: string;
-  filter?: string;
-}
-
-export interface ListResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  perPage: number;
-  totalPages: number;
-}
-
-export interface AuthResponse {
-  user: any;
-  token: string;
-}
-
-export interface UploadOptions {
-  isPublic?: boolean;
-  folder?: string;
-  fileName?: string;
-  contentType?: string;
-}
-
-export class flarebase {
+export class flarebase implements FlarebaseClient {
   private config: FlarebaseConfig;
 
   constructor(baseUrl: string, token?: string) {
@@ -55,6 +36,9 @@ export class flarebase {
           method: "POST",
           body: JSON.stringify({ email, password }),
         });
+        if (response.token) {
+          this.setToken(response.token);
+        }
         return response;
       },
 
@@ -67,19 +51,35 @@ export class flarebase {
           method: "POST",
           body: JSON.stringify({ email, password, name }),
         });
+        if (response.token) {
+          this.setToken(response.token);
+        }
         return response;
       },
 
-      me: async () => {
-        const response = await this.request("/api/auth/me");
-        return response;
+      getCurrentUser: async (): Promise<User> => {
+        return this.request("/api/auth/me");
       },
 
-      logout: async () => {
-        const response = await this.request("/api/auth/logout", {
+      logout: async (): Promise<void> => {
+        await this.request("/api/auth/logout", {
           method: "POST",
         });
-        return response;
+        this.config.token = undefined;
+        if (typeof localStorage !== "undefined") {
+          localStorage.removeItem("authToken");
+        }
+      },
+
+      isAuthenticated: (): boolean => {
+        return !!this.config.token;
+      },
+
+      setToken: (token: string): void => {
+        this.config.token = token;
+        if (typeof localStorage !== "undefined") {
+          localStorage.setItem("authToken", token);
+        }
       },
     };
   }
@@ -132,29 +132,43 @@ export class flarebase {
   // Collections management
   get collections() {
     return {
-      list: async () => {
+      list: async (): Promise<Collection[]> => {
         return this.request("/api/collections");
       },
 
-      create: async (name: string, schema: any) => {
+      create: async (data: CreateCollectionData): Promise<Collection> => {
         return this.request("/api/collections", {
           method: "POST",
-          body: JSON.stringify({ name, schema: JSON.stringify(schema) }),
+          body: JSON.stringify({
+            name: data.name,
+            schema: JSON.stringify(data.schema),
+          }),
         });
       },
 
-      get: async (id: string) => {
+      get: async (id: string): Promise<Collection> => {
         return this.request(`/api/collections/${id}`);
       },
 
-      update: async (id: string, name: string, schema: any) => {
+      getOne: async (id: string): Promise<Collection> => {
+        return this.request(`/api/collections/${id}`);
+      },
+
+      update: async (
+        id: string,
+        data: UpdateCollectionData
+      ): Promise<Collection> => {
+        const payload: any = {};
+        if (data.name) payload.name = data.name;
+        if (data.schema) payload.schema = JSON.stringify(data.schema);
+
         return this.request(`/api/collections/${id}`, {
           method: "PUT",
-          body: JSON.stringify({ name, schema: JSON.stringify(schema) }),
+          body: JSON.stringify(payload),
         });
       },
 
-      delete: async (id: string) => {
+      delete: async (id: string): Promise<void> => {
         await this.request(`/api/collections/${id}`, {
           method: "DELETE",
         });
@@ -165,7 +179,10 @@ export class flarebase {
   // File storage methods
   get storage() {
     return {
-      upload: async (file: File, options: UploadOptions = {}) => {
+      upload: async (
+        file: File,
+        options: UploadOptions = {}
+      ): Promise<FileRecord> => {
         const formData = new FormData();
         formData.append("file", file);
 
@@ -185,7 +202,7 @@ export class flarebase {
 
       getList: async (
         options: { prefix?: string; page?: number; perPage?: number } = {}
-      ) => {
+      ): Promise<ListResponse<FileRecord>> => {
         const params = new URLSearchParams();
         if (options.prefix) params.append("prefix", options.prefix);
         if (options.page) params.append("page", options.page.toString());
@@ -198,168 +215,18 @@ export class flarebase {
         return this.request(url);
       },
 
-      getOne: async (id: string) => {
+      getOne: async (id: string): Promise<FileRecord> => {
         return this.request(`/api/storage/${id}`);
       },
 
-      delete: async (id: string) => {
+      delete: async (id: string): Promise<void> => {
         await this.request(`/api/storage/${id}`, {
           method: "DELETE",
         });
       },
 
-      getPublicUrl: (id: string) => {
+      getPublicUrl: (id: string): string => {
         return `${this.config.baseUrl}/api/storage/${id}/public`;
-      },
-    };
-  }
-
-  // Realtime subscriptions
-  get realtime() {
-    return {
-      subscribe: <T = any>(
-        collection: string,
-        callback: (event: any) => void
-      ) => {
-        const wsUrl =
-          this.config.baseUrl.replace("http", "ws") + "/api/realtime";
-        const ws = new WebSocket(wsUrl);
-
-        ws.onopen = () => {
-          ws.send(
-            JSON.stringify({
-              type: "subscribe",
-              collection,
-            })
-          );
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === "event" && data.collection === collection) {
-              callback(data);
-            }
-          } catch (error) {
-            console.error("Error parsing realtime message:", error);
-          }
-        };
-
-        return {
-          unsubscribe: () => {
-            ws.send(
-              JSON.stringify({
-                type: "unsubscribe",
-                collection,
-              })
-            );
-            ws.close();
-          },
-        };
-      },
-    };
-  }
-
-  // User presence
-  get presence() {
-    return {
-      subscribeToPresence: (callback: (event: any) => void) => {
-        const wsUrl =
-          this.config.baseUrl.replace("http", "ws") + "/api/presence/connect";
-        const ws = new WebSocket(wsUrl);
-
-        ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === "presenceEvent") {
-              callback(data);
-            }
-          } catch (error) {
-            console.error("Error parsing presence message:", error);
-          }
-        };
-
-        return {
-          disconnect: () => {
-            ws.close();
-          },
-        };
-      },
-
-      updateStatus: async (status: string, metadata?: any) => {
-        return this.request("/api/presence/status", {
-          method: "POST",
-          body: JSON.stringify({ status, metadata }),
-        });
-      },
-
-      getOnlineUsers: async () => {
-        return this.request("/api/presence/users");
-      },
-    };
-  }
-
-  // Backup methods
-  get backup() {
-    return {
-      export: async (collection?: string) => {
-        const params = collection ? `?collection=${collection}` : "";
-        const url = `/api/backup/export${params}`;
-
-        const response = await fetch(`${this.config.baseUrl}${url}`, {
-          headers: this.getHeaders(),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Export failed: ${response.statusText}`);
-        }
-
-        return response.blob();
-      },
-
-      import: async (file: File, overwrite = false) => {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const params = overwrite ? "?overwrite=true" : "";
-        return this.request(`/api/backup/import${params}`, {
-          method: "POST",
-          body: formData,
-          headers: {},
-        });
-      },
-    };
-  }
-
-  // Settings methods
-  get settings() {
-    return {
-      get: async () => {
-        return this.request("/api/settings");
-      },
-
-      update: async (settings: any) => {
-        return this.request("/api/settings", {
-          method: "PUT",
-          body: JSON.stringify(settings),
-        });
-      },
-
-      reset: async () => {
-        return this.request("/api/settings/reset", {
-          method: "POST",
-        });
-      },
-
-      getKey: async (key: string) => {
-        return this.request(`/api/settings/${key}`);
-      },
-
-      setKey: async (key: string, value: any) => {
-        return this.request(`/api/settings/${key}`, {
-          method: "PUT",
-          body: JSON.stringify({ value }),
-        });
       },
     };
   }
@@ -410,6 +277,112 @@ export class flarebase {
   // Remove authentication token
   clearToken() {
     this.config.token = undefined;
+  }
+
+  // Add missing methods and properties to match FlarebaseClient interface
+  get baseUrl(): string {
+    return this.config.baseUrl;
+  }
+
+  async fetchApi(path: string, options?: RequestInit): Promise<any> {
+    return this.request(path, options);
+  }
+
+  // Realtime (simplified implementation)
+  get realtime() {
+    return {
+      subscribe: async (collection: string): Promise<WebSocket> => {
+        const wsUrl = `${this.config.baseUrl.replace(
+          "http",
+          "ws"
+        )}/api/realtime?collection=${collection}`;
+        return new WebSocket(wsUrl);
+      },
+
+      publish: async (collection: string, event: any): Promise<void> => {
+        await this.request("/api/realtime/publish", {
+          method: "POST",
+          body: JSON.stringify({ collection, event }),
+        });
+      },
+    };
+  }
+
+  // Presence (simplified implementation)
+  get presence() {
+    return {
+      connect: async (userId: string): Promise<WebSocket> => {
+        const wsUrl = `${this.config.baseUrl.replace(
+          "http",
+          "ws"
+        )}/api/presence?userId=${userId}`;
+        return new WebSocket(wsUrl);
+      },
+
+      updateStatus: async (
+        userId: string,
+        status: string,
+        metadata?: any
+      ): Promise<void> => {
+        await this.request("/api/presence/status", {
+          method: "POST",
+          body: JSON.stringify({ userId, status, metadata }),
+        });
+      },
+
+      getUsers: async (): Promise<any[]> => {
+        return this.request("/api/presence/users");
+      },
+
+      disconnect: async (userId: string): Promise<void> => {
+        await this.request("/api/presence/disconnect", {
+          method: "POST",
+          body: JSON.stringify({ userId }),
+        });
+      },
+    };
+  }
+
+  // Backup
+  get backup() {
+    return {
+      export: async (collection?: string): Promise<any> => {
+        const url = collection
+          ? `/api/backup/export?collection=${collection}`
+          : "/api/backup/export";
+        return this.request(url);
+      },
+
+      import: async (data: any, overwrite?: boolean): Promise<any> => {
+        return this.request("/api/backup/import", {
+          method: "POST",
+          body: JSON.stringify({ data, overwrite }),
+        });
+      },
+    };
+  }
+
+  // Settings
+  get settings() {
+    return {
+      get: async (key?: string): Promise<any> => {
+        const url = key ? `/api/settings/${key}` : "/api/settings";
+        return this.request(url);
+      },
+
+      set: async (key: string, value: any): Promise<void> => {
+        await this.request(`/api/settings/${key}`, {
+          method: "PUT",
+          body: JSON.stringify({ value }),
+        });
+      },
+
+      reset: async (): Promise<void> => {
+        await this.request("/api/settings/reset", {
+          method: "POST",
+        });
+      },
+    };
   }
 }
 

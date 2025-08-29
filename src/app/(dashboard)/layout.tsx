@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/sidebar';
 import Header from '@/components/layout/header';
-import { getflarebaseClient } from '@/lib/flarebase';
+import { getFlarebaseClient } from '@/lib/flarebase';
 
 export default function DashboardLayout({
   children,
@@ -25,7 +25,7 @@ export default function DashboardLayout({
     // Check if user is authenticated
     const checkAuth = async () => {
       try {
-        const flarebase = getflarebaseClient();
+        const flarebase = getFlarebaseClient();
         
         if (!flarebase.auth.isAuthenticated()) {
           router.push('/login');

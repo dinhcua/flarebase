@@ -9,7 +9,7 @@ import { RealtimeSubscription } from "./durable_objects/realtime";
 import { UserPresence } from "./durable_objects/presence";
 
 // Import routes
-import { authRouter } from "./routes/auth";
+import { authRouter, initializeAdminUser } from "./routes/auth";
 import { collectionsRouter } from "./routes/collections";
 import { storageRouter } from "./routes/storage";
 import { backupRouter } from "./routes/backup";
@@ -132,7 +132,22 @@ app.onError((error, c) => {
   );
 });
 
+// Wrapper to initialize admin user on first request
+const initializeOnFirstRequest = async (
+  request: Request,
+  env: Bindings,
+  ctx: ExecutionContext
+) => {
+  // Initialize admin user (only runs if no admin exists)
+  ctx.waitUntil(initializeAdminUser(env));
+
+  // Continue with normal request handling
+  return app.fetch(request, env, ctx);
+};
+
 // Export Durable Objects
 export { RealtimeSubscription, UserPresence };
 
-export default app;
+export default {
+  fetch: initializeOnFirstRequest,
+};

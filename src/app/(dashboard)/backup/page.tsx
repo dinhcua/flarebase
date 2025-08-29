@@ -1,25 +1,12 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import {
-  Card,
-  Title,
-  Text,
-  Button,
-  Badge,
-  Divider,
-  List,
-  ListItem,
-  Grid,
-  Flex,
-  Accordion,
-  AccordionHeader,
-  AccordionBody,
-  AccordionList,
-} from '@tremor/react';
-import { CloudArrowDownIcon, CloudArrowUpIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { CloudDownload, CloudUpload, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { getflarebaseClient } from '@/lib/flarebase';
+import { getFlarebaseClient } from '@/lib/flarebase';
 
 export default function BackupPage() {
   const [isExporting, setIsExporting] = useState(false);
@@ -32,7 +19,7 @@ export default function BackupPage() {
     setIsExporting(true);
     
     try {
-      const flarebase = getflarebaseClient();
+      const flarebase = getFlarebaseClient();
       
       // Lấy token từ localStorage
       const token = localStorage.getItem('authToken');
@@ -72,7 +59,7 @@ export default function BackupPage() {
       URL.revokeObjectURL(url);
       
       toast.success('Backup tạo thành công!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Lỗi khi tạo backup:', error);
       toast.error(`Không thể tạo backup: ${error.message}`);
     } finally {
@@ -101,7 +88,7 @@ export default function BackupPage() {
       const jsonData = JSON.parse(fileContent);
       
       // Upload file thông qua API
-      const flarebase = getflarebaseClient();
+      const flarebase = getFlarebaseClient();
       const result = await flarebase.fetchApi('/api/backup/import', {
         method: 'POST',
         body: JSON.stringify(jsonData),
@@ -114,7 +101,7 @@ export default function BackupPage() {
       } else {
         toast.error('Import dữ liệu thất bại. Xem chi tiết để biết thêm thông tin.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Lỗi khi import:', error);
       toast.error(`Không thể import: ${error.message}`);
     } finally {
@@ -149,225 +136,235 @@ export default function BackupPage() {
         <p className="text-gray-500">Sao lưu và khôi phục dữ liệu cho flarebase</p>
       </div>
       
-      <Grid numItemsMd={2} className="gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
-          <Title>Tạo Backup</Title>
-          <Text className="mt-2">
-            Xuất toàn bộ collections, schemas, và dữ liệu sang file JSON để sao lưu hoặc chuyển đến hệ thống khác.
-          </Text>
-          
-          <Divider />
-          
-          <Text className="text-sm text-gray-500 mt-2">Dữ liệu được bao gồm trong backup:</Text>
-          <List className="mt-2">
-            <ListItem>
-              <Badge color="blue">Collections</Badge>
-              <span>Tất cả collections và schema</span>
-            </ListItem>
-            <ListItem>
-              <Badge color="green">Records</Badge>
-              <span>Dữ liệu của mỗi collection</span>
-            </ListItem>
-            <ListItem>
-              <Badge color="amber">Users</Badge>
-              <span>Thông tin user (không bao gồm mật khẩu)</span>
-            </ListItem>
-            <ListItem>
-              <Badge color="indigo">Files</Badge>
-              <span>Metadata của file (không bao gồm nội dung file)</span>
-            </ListItem>
-          </List>
-          
-          <Button
-            className="mt-4 w-full"
-            icon={CloudArrowDownIcon}
-            loading={isExporting}
-            disabled={isExporting}
-            onClick={handleExport}
-          >
-            {isExporting ? 'Đang tạo backup...' : 'Tạo backup và tải về'}
-          </Button>
+          <CardHeader>
+            <CardTitle>Tạo Backup</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Xuất toàn bộ collections, schemas, và dữ liệu sang file JSON để sao lưu hoặc chuyển đến hệ thống khác.
+            </p>
+            
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium mb-2">Dữ liệu được bao gồm trong backup:</p>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Badge variant="default">Collections</Badge>
+                  <span className="text-sm">Tất cả collections và schema</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="secondary">Records</Badge>
+                  <span className="text-sm">Dữ liệu của mỗi collection</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline">Users</Badge>
+                  <span className="text-sm">Thông tin user (không bao gồm mật khẩu)</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge>Files</Badge>
+                  <span className="text-sm">Metadata của file (không bao gồm nội dung file)</span>
+                </div>
+              </div>
+            </div>
+            
+            <Button
+              className="w-full"
+              disabled={isExporting}
+              onClick={handleExport}
+            >
+              <CloudDownload className="mr-2 h-4 w-4" />
+              {isExporting ? 'Đang tạo backup...' : 'Tạo backup và tải về'}
+            </Button>
+          </CardContent>
         </Card>
         
         <Card>
-          <Title>Khôi phục từ Backup</Title>
-          <Text className="mt-2">
-            Import dữ liệu từ file backup để khôi phục hệ thống hoặc chuyển dữ liệu từ hệ thống khác.
-          </Text>
-          
-          <Divider />
-          
-          <Text className="text-sm text-gray-500 mt-2">Lưu ý khi khôi phục:</Text>
-          <List className="mt-2">
-            <ListItem>
-              <Badge color="blue">Collections</Badge>
-              <span>Collections đã tồn tại sẽ được cập nhật schema</span>
-            </ListItem>
-            <ListItem>
-              <Badge color="green">Records</Badge>
-              <span>Records đã tồn tại sẽ không bị ghi đè</span>
-            </ListItem>
-            <ListItem>
-              <Badge color="amber">Users</Badge>
-              <span>Users được import cần reset mật khẩu</span>
-            </ListItem>
-            <ListItem>
-              <Badge color="red">Cảnh báo</Badge>
-              <span>Nên thực hiện trên hệ thống mới để tránh xung đột</span>
-            </ListItem>
-          </List>
-          
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept=".json"
-            className="hidden"
-          />
-          
-          <Button
-            className="mt-4 w-full"
-            icon={CloudArrowUpIcon}
-            loading={isImporting}
-            disabled={isImporting}
-            onClick={handleImportClick}
-          >
-            {isImporting ? 'Đang import...' : 'Chọn file backup để import'}
-          </Button>
+          <CardHeader>
+            <CardTitle>Khôi phục từ Backup</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Import dữ liệu từ file backup để khôi phục hệ thống hoặc chuyển dữ liệu từ hệ thống khác.
+            </p>
+            
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium mb-2">Lưu ý khi khôi phục:</p>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Badge variant="default">Collections</Badge>
+                  <span className="text-sm">Collections đã tồn tại sẽ được cập nhật schema</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="secondary">Records</Badge>
+                  <span className="text-sm">Records đã tồn tại sẽ không bị ghi đè</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline">Users</Badge>
+                  <span className="text-sm">Users được import cần reset mật khẩu</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="destructive">Cảnh báo</Badge>
+                  <span className="text-sm">Nên thực hiện trên hệ thống mới để tránh xung đột</span>
+                </div>
+              </div>
+            </div>
+            
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".json"
+              className="hidden"
+            />
+            
+            <Button
+              className="w-full"
+              disabled={isImporting}
+              onClick={handleImportClick}
+            >
+              <CloudUpload className="mr-2 h-4 w-4" />
+              {isImporting ? 'Đang import...' : 'Chọn file backup để import'}
+            </Button>
+          </CardContent>
         </Card>
-      </Grid>
+      </div>
       
       {importResult && (
         <Card>
-          <Flex justifyContent="between" alignItems="center">
-            <Title>Kết quả Import</Title>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Kết quả Import</CardTitle>
             <Button
-              icon={ArrowPathIcon}
-              variant="light"
+              variant="outline"
+              size="sm"
               onClick={() => window.location.reload()}
             >
+              <RefreshCw className="mr-2 h-4 w-4" />
               Làm mới trang
             </Button>
-          </Flex>
-          
-          <div className="mt-4 space-y-4">
-            <div className="grid grid-cols-4 gap-4">
-              <Card decoration="top" decorationColor="blue">
-                <Text>Collections</Text>
-                <div className="flex items-center justify-between mt-2">
-                  <Badge color="green">Thành công: {importResult.results.collections.success}</Badge>
-                  <Badge color="red">Lỗi: {importResult.results.collections.error}</Badge>
-                </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Collections</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary">✓ {importResult.results.collections.success}</Badge>
+                    <Badge variant="destructive">✗ {importResult.results.collections.error}</Badge>
+                  </div>
+                </CardContent>
               </Card>
               
-              <Card decoration="top" decorationColor="green">
-                <Text>Records</Text>
-                <div className="flex items-center justify-between mt-2">
-                  <Badge color="green">Thành công: {importResult.results.records.success}</Badge>
-                  <Badge color="red">Lỗi: {importResult.results.records.error}</Badge>
-                </div>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Records</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary">✓ {importResult.results.records.success}</Badge>
+                    <Badge variant="destructive">✗ {importResult.results.records.error}</Badge>
+                  </div>
+                </CardContent>
               </Card>
               
-              <Card decoration="top" decorationColor="amber">
-                <Text>Users</Text>
-                <div className="flex items-center justify-between mt-2">
-                  <Badge color="green">Thành công: {importResult.results.users.success}</Badge>
-                  <Badge color="red">Lỗi: {importResult.results.users.error}</Badge>
-                </div>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Users</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary">✓ {importResult.results.users.success}</Badge>
+                    <Badge variant="destructive">✗ {importResult.results.users.error}</Badge>
+                  </div>
+                </CardContent>
               </Card>
               
-              <Card decoration="top" decorationColor="indigo">
-                <Text>Files</Text>
-                <div className="flex items-center justify-between mt-2">
-                  <Badge color="green">Thành công: {importResult.results.files.success}</Badge>
-                  <Badge color="red">Lỗi: {importResult.results.files.error}</Badge>
-                </div>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Files</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary">✓ {importResult.results.files.success}</Badge>
+                    <Badge variant="destructive">✗ {importResult.results.files.error}</Badge>
+                  </div>
+                </CardContent>
               </Card>
             </div>
             
-            <AccordionList>
-              <Accordion>
-                <AccordionHeader>Chi tiết Collections</AccordionHeader>
-                <AccordionBody>
-                  <List>
-                    {importResult.results.collections.details.map((detail: any, idx: number) => (
-                      <ListItem key={idx}>
-                        <div className="flex items-center space-x-2">
-                          <Badge 
-                            color={
-                              detail.status === 'created' ? 'green' : 
-                              detail.status === 'updated' ? 'blue' : 
-                              'red'
-                            }
-                          >
-                            {detail.status}
-                          </Badge>
-                          <span>{detail.name}</span>
-                        </div>
-                        {detail.error && (
-                          <Text className="text-sm text-red-500">{detail.error}</Text>
-                        )}
-                      </ListItem>
-                    ))}
-                  </List>
-                </AccordionBody>
-              </Accordion>
+            <div className="space-y-4">
+              <details className="group">
+                <summary className="cursor-pointer font-medium">Chi tiết Collections</summary>
+                <div className="mt-2 space-y-1 pl-4">
+                  {importResult.results.collections.details.map((detail: any, idx: number) => (
+                    <div key={idx} className="flex items-center space-x-2">
+                      <Badge 
+                        variant={
+                          detail.status === 'created' ? 'secondary' : 
+                          detail.status === 'updated' ? 'default' : 
+                          'destructive'
+                        }
+                      >
+                        {detail.status}
+                      </Badge>
+                      <span className="text-sm">{detail.name}</span>
+                      {detail.error && (
+                        <span className="text-sm text-red-500">({detail.error})</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </details>
               
-              <Accordion>
-                <AccordionHeader>Chi tiết Users</AccordionHeader>
-                <AccordionBody>
-                  <List>
-                    {importResult.results.users.details.map((detail: any, idx: number) => (
-                      <ListItem key={idx}>
-                        <div className="flex items-center space-x-2">
-                          <Badge 
-                            color={
-                              detail.status === 'imported_need_password_reset' ? 'amber' : 
-                              detail.status === 'skipped' ? 'blue' : 
-                              'red'
-                            }
-                          >
-                            {detail.status}
-                          </Badge>
-                          <span>{detail.email}</span>
-                        </div>
-                        {detail.error && (
-                          <Text className="text-sm text-red-500">{detail.error}</Text>
-                        )}
-                      </ListItem>
-                    ))}
-                  </List>
-                </AccordionBody>
-              </Accordion>
+              <details className="group">
+                <summary className="cursor-pointer font-medium">Chi tiết Users</summary>
+                <div className="mt-2 space-y-1 pl-4">
+                  {importResult.results.users.details.map((detail: any, idx: number) => (
+                    <div key={idx} className="flex items-center space-x-2">
+                      <Badge 
+                        variant={
+                          detail.status === 'imported_need_password_reset' ? 'outline' : 
+                          detail.status === 'skipped' ? 'default' : 
+                          'destructive'
+                        }
+                      >
+                        {detail.status}
+                      </Badge>
+                      <span className="text-sm">{detail.email}</span>
+                      {detail.error && (
+                        <span className="text-sm text-red-500">({detail.error})</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </details>
               
-              <Accordion>
-                <AccordionHeader>Chi tiết Files</AccordionHeader>
-                <AccordionBody>
-                  <List>
-                    {importResult.results.files.details.map((detail: any, idx: number) => (
-                      <ListItem key={idx}>
-                        <div className="flex items-center space-x-2">
-                          <Badge 
-                            color={
-                              detail.status === 'metadata_imported' ? 'green' : 
-                              detail.status === 'skipped' ? 'blue' : 
-                              'red'
-                            }
-                          >
-                            {detail.status}
-                          </Badge>
-                          <span>{detail.name}</span>
-                        </div>
-                        {detail.error && (
-                          <Text className="text-sm text-red-500">{detail.error}</Text>
-                        )}
-                      </ListItem>
-                    ))}
-                  </List>
-                </AccordionBody>
-              </Accordion>
-            </AccordionList>
-          </div>
+              <details className="group">
+                <summary className="cursor-pointer font-medium">Chi tiết Files</summary>
+                <div className="mt-2 space-y-1 pl-4">
+                  {importResult.results.files.details.map((detail: any, idx: number) => (
+                    <div key={idx} className="flex items-center space-x-2">
+                      <Badge 
+                        variant={
+                          detail.status === 'metadata_imported' ? 'secondary' : 
+                          detail.status === 'skipped' ? 'default' : 
+                          'destructive'
+                        }
+                      >
+                        {detail.status}
+                      </Badge>
+                      <span className="text-sm">{detail.name}</span>
+                      {detail.error && (
+                        <span className="text-sm text-red-500">({detail.error})</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </div>
+          </CardContent>
         </Card>
       )}
     </div>
