@@ -1,37 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Card,
-  Title,
-  Text,
-  LineChart,
-  BarChart,
-  Grid,
-  Metric,
-  Flex,
-  AreaChart,
-  DonutChart,
-  Tab,
-  TabGroup,
-  TabList,
-  TabPanel,
-  TabPanels,
-  Table,
-  TableHead,
-  TableRow,
-  TableHeaderCell,
-  TableBody,
-  TableCell,
-  Badge,
-  Select,
-  SelectItem,
-  DateRangePicker,
-  Button,
-} from '@tremor/react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { getflarebaseClient } from '@/lib/flarebase';
-import { ArrowPathIcon, DownloadIcon } from '@heroicons/react/24/outline';
+import { getFlarebaseClient } from '@/lib/flarebase';
+import { RefreshCw, Download, Calendar } from 'lucide-react';
 
 export default function AnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +17,6 @@ export default function AnalyticsPage() {
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     to: new Date()
   });
-  const [activeTab, setActiveTab] = useState(0);
   const [viewMode, setViewMode] = useState('day');
   const [visitData, setVisitData] = useState<any[]>([]);
   const [userActivity, setUserActivity] = useState<any[]>([]);
@@ -62,7 +39,7 @@ export default function AnalyticsPage() {
     setIsLoading(true);
     
     try {
-      const flarebase = getflarebaseClient();
+      const flarebase = getFlarebaseClient();
       
       // Định dạng ngày tháng cho query
       const fromDate = format(dateRange.from, 'yyyy-MM-dd');
@@ -88,7 +65,7 @@ export default function AnalyticsPage() {
       setVisitData(visits);
       
       // Phân tích người dùng đăng nhập
-      const loggedInUsers = items.filter(item => item.user_id);
+      const loggedInUsers = items.filter((item: any) => item.user_id);
       const userVisits = processUserActivity(loggedInUsers);
       setUserActivity(userVisits);
       
@@ -106,7 +83,7 @@ export default function AnalyticsPage() {
       
       // Hoạt động gần đây
       const recent = items
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
         .slice(0, 50);
       setRecentActivity(recent);
       
@@ -287,219 +264,273 @@ export default function AnalyticsPage() {
         </div>
         <div className="flex items-center space-x-2">
           <Button 
-            icon={ArrowPathIcon}
-            variant="secondary"
+            variant="outline"
             onClick={fetchAnalytics}
           >
+            <RefreshCw className="mr-2 h-4 w-4" />
             Làm mới
           </Button>
           <Button 
-            icon={DownloadIcon}
-            variant="secondary"
+            variant="outline"
             onClick={exportCSV}
           >
+            <Download className="mr-2 h-4 w-4" />
             Xuất CSV
           </Button>
         </div>
       </div>
       
       <div className="flex items-center justify-between">
-        <DateRangePicker
-          value={dateRange}
-          onValueChange={setDateRange}
-          selectPlaceholder="Chọn..."
-          className="max-w-md"
-        />
-        <Select
-          value={viewMode}
-          onValueChange={setViewMode}
-          className="w-40"
-        >
-          <SelectItem value="day">Theo ngày</SelectItem>
-          <SelectItem value="week">Theo tuần</SelectItem>
-          <SelectItem value="month">Theo tháng</SelectItem>
+        <div className="flex items-center space-x-2">
+          <Calendar className="h-4 w-4 text-gray-500" />
+          <span className="text-sm text-gray-600">
+            {format(dateRange.from, 'dd/MM/yyyy')} - {format(dateRange.to, 'dd/MM/yyyy')}
+          </span>
+        </div>
+        <Select value={viewMode} onValueChange={setViewMode}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="day">Theo ngày</SelectItem>
+            <SelectItem value="week">Theo tuần</SelectItem>
+            <SelectItem value="month">Theo tháng</SelectItem>
+          </SelectContent>
         </Select>
       </div>
       
-      <Grid numItemsLg={4} className="gap-6">
-        <Card decoration="top" decorationColor="blue">
-          <Text>Tổng lượt truy cập</Text>
-          <Metric>{visitData.reduce((sum, item) => sum + item.Total, 0)}</Metric>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tổng lượt truy cập</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{visitData.reduce((sum, item) => sum + item.Total, 0)}</div>
+          </CardContent>
         </Card>
-        <Card decoration="top" decorationColor="green">
-          <Text>Người dùng đã đăng nhập</Text>
-          <Metric>{userActivity.length}</Metric>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Người dùng đã đăng nhập</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{userActivity.length}</div>
+          </CardContent>
         </Card>
-        <Card decoration="top" decorationColor="amber">
-          <Text>Quốc gia</Text>
-          <Metric>{countryData.length}</Metric>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Quốc gia</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{countryData.length}</div>
+          </CardContent>
         </Card>
-        <Card decoration="top" decorationColor="indigo">
-          <Text>Đường dẫn đã truy cập</Text>
-          <Metric>{pathData.length}</Metric>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Đường dẫn đã truy cập</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pathData.length}</div>
+          </CardContent>
         </Card>
-      </Grid>
+      </div>
       
-      <TabGroup index={activeTab} onIndexChange={setActiveTab}>
-        <TabList>
-          <Tab>Tổng quan</Tab>
-          <Tab>Người dùng</Tab>
-          <Tab>Địa lý</Tab>
-          <Tab>Hoạt động gần đây</Tab>
-        </TabList>
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Tổng quan</TabsTrigger>
+          <TabsTrigger value="users">Người dùng</TabsTrigger>
+          <TabsTrigger value="geo">Địa lý</TabsTrigger>
+          <TabsTrigger value="recent">Hoạt động gần đây</TabsTrigger>
+        </TabsList>
         
-        <TabPanels>
-          <TabPanel>
-            <div className="mt-6 space-y-6">
+        <TabsContent value="overview">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Lưu lượng truy cập</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {visitData.map((data, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">{data.time}</span>
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-1">
+                          <div className="h-2 w-2 rounded-full bg-blue-500" />
+                          <span className="text-sm">{data.Total}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <div className="h-2 w-2 rounded-full bg-green-500" />
+                          <span className="text-sm">{data['Unique Users']}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <div className="h-2 w-2 rounded-full bg-amber-500" />
+                          <span className="text-sm">{data['Unique IPs']}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <Card>
-                <Title>Lưu lượng truy cập</Title>
-                <AreaChart
-                  className="mt-4 h-80"
-                  data={visitData}
-                  index="time"
-                  categories={["Total", "Unique Users", "Unique IPs"]}
-                  colors={["blue", "green", "amber"]}
-                />
+                <CardHeader>
+                  <CardTitle>Trình duyệt</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {browserData.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="text-sm">{item.name}</span>
+                        <Badge variant="secondary">{item.value}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
               </Card>
-              
-              <Grid numItemsLg={2} className="gap-6">
-                <Card>
-                  <Title>Trình duyệt</Title>
-                  <DonutChart
-                    className="mt-4 h-60"
-                    data={browserData}
-                    category="value"
-                    index="name"
-                    colors={["blue", "green", "amber", "indigo", "violet"]}
-                  />
-                </Card>
-                <Card>
-                  <Title>Đường dẫn phổ biến</Title>
-                  <BarChart
-                    className="mt-4 h-60"
-                    data={pathData}
-                    index="name"
-                    categories={["value"]}
-                    colors={["blue"]}
-                    yAxisWidth={48}
-                    layout="vertical"
-                  />
-                </Card>
-              </Grid>
-            </div>
-          </TabPanel>
-          
-          <TabPanel>
-            <div className="mt-6">
               <Card>
-                <Title>Hoạt động người dùng</Title>
-                <Table className="mt-4">
-                  <TableHead>
+                <CardHeader>
+                  <CardTitle>Đường dẫn phổ biến</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {pathData.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="text-sm truncate max-w-[200px]">{item.name}</span>
+                        <Badge variant="secondary">{item.value}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="users">
+          <Card>
+            <CardHeader>
+              <CardTitle>Hoạt động người dùng</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID Người dùng</TableHead>
+                    <TableHead>Số lượt hoạt động</TableHead>
+                    <TableHead>Đường dẫn đã truy cập</TableHead>
+                    <TableHead>Hoạt động lần cuối</TableHead>
+                    <TableHead>Lần đầu xuất hiện</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {userActivity.length === 0 ? (
                     <TableRow>
-                      <TableHeaderCell>ID Người dùng</TableHeaderCell>
-                      <TableHeaderCell>Số lượt hoạt động</TableHeaderCell>
-                      <TableHeaderCell>Đường dẫn đã truy cập</TableHeaderCell>
-                      <TableHeaderCell>Hoạt động lần cuối</TableHeaderCell>
-                      <TableHeaderCell>Lần đầu xuất hiện</TableHeaderCell>
+                      <TableCell colSpan={5} className="text-center">
+                        Không có dữ liệu
+                      </TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {userActivity.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center">
-                          Không có dữ liệu
-                        </TableCell>
+                  ) : (
+                    userActivity.slice(0, 20).map((user, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{user.user_id}</TableCell>
+                        <TableCell>{user.activity_count}</TableCell>
+                        <TableCell>{user.unique_paths}</TableCell>
+                        <TableCell>{user.last_active}</TableCell>
+                        <TableCell>{user.first_seen}</TableCell>
                       </TableRow>
-                    ) : (
-                      userActivity.slice(0, 20).map((user, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell>{user.user_id}</TableCell>
-                          <TableCell>{user.activity_count}</TableCell>
-                          <TableCell>{user.unique_paths}</TableCell>
-                          <TableCell>{user.last_active}</TableCell>
-                          <TableCell>{user.first_seen}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </Card>
-            </div>
-          </TabPanel>
-          
-          <TabPanel>
-            <div className="mt-6">
-              <Card>
-                <Title>Phân bố theo quốc gia</Title>
-                <DonutChart
-                  className="mt-4 h-80"
-                  data={countryData}
-                  category="value"
-                  index="name"
-                  colors={["blue", "cyan", "indigo", "violet", "fuchsia", "pink", "rose"]}
-                />
-              </Card>
-            </div>
-          </TabPanel>
-          
-          <TabPanel>
-            <div className="mt-6">
-              <Card>
-                <Title>Hoạt động gần đây</Title>
-                <Table className="mt-4">
-                  <TableHead>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="geo">
+          <Card>
+            <CardHeader>
+              <CardTitle>Phân bố theo quốc gia</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {countryData.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span className="text-sm">{item.name}</span>
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className="h-2 bg-blue-500 rounded"
+                        style={{ width: `${Math.max((item.value / Math.max(...countryData.map(d => d.value))) * 200, 4)}px` }}
+                      />
+                      <Badge variant="secondary">{item.value}</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="recent">
+          <Card>
+            <CardHeader>
+              <CardTitle>Hoạt động gần đây</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Thời gian</TableHead>
+                    <TableHead>Người dùng</TableHead>
+                    <TableHead>Đường dẫn</TableHead>
+                    <TableHead>Phương thức</TableHead>
+                    <TableHead>IP</TableHead>
+                    <TableHead>Quốc gia</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentActivity.length === 0 ? (
                     <TableRow>
-                      <TableHeaderCell>Thời gian</TableHeaderCell>
-                      <TableHeaderCell>Người dùng</TableHeaderCell>
-                      <TableHeaderCell>Đường dẫn</TableHeaderCell>
-                      <TableHeaderCell>Phương thức</TableHeaderCell>
-                      <TableHeaderCell>IP</TableHeaderCell>
-                      <TableHeaderCell>Quốc gia</TableHeaderCell>
+                      <TableCell colSpan={6} className="text-center">
+                        Không có dữ liệu
+                      </TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {recentActivity.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center">
-                          Không có dữ liệu
+                  ) : (
+                    recentActivity.map((activity, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{format(new Date(activity.timestamp), 'dd/MM HH:mm:ss')}</TableCell>
+                        <TableCell>
+                          {activity.user_id ? (
+                            <Badge variant="secondary">{activity.user_id}</Badge>
+                          ) : (
+                            <Badge variant="outline">Khách</Badge>
+                          )}
                         </TableCell>
+                        <TableCell>{activity.path}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={
+                              activity.method === 'GET' ? 'default' :
+                              activity.method === 'POST' ? 'secondary' :
+                              activity.method === 'PUT' ? 'outline' :
+                              activity.method === 'DELETE' ? 'destructive' : 'outline'
+                            }
+                          >
+                            {activity.method}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{activity.ip}</TableCell>
+                        <TableCell>{activity.country || 'Unknown'}</TableCell>
                       </TableRow>
-                    ) : (
-                      recentActivity.map((activity, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell>{format(new Date(activity.timestamp), 'dd/MM HH:mm:ss')}</TableCell>
-                          <TableCell>
-                            {activity.user_id ? (
-                              <Badge color="green">{activity.user_id}</Badge>
-                            ) : (
-                              <Badge color="gray">Khách</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>{activity.path}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              color={
-                                activity.method === 'GET' ? 'blue' :
-                                activity.method === 'POST' ? 'green' :
-                                activity.method === 'PUT' ? 'amber' :
-                                activity.method === 'DELETE' ? 'red' : 'gray'
-                              }
-                            >
-                              {activity.method}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{activity.ip}</TableCell>
-                          <TableCell>{activity.country || 'Unknown'}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </Card>
-            </div>
-          </TabPanel>
-        </TabPanels>
-      </TabGroup>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

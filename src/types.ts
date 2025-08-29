@@ -1,7 +1,7 @@
 // Cloudflare Worker Environment Bindings
 export interface Bindings {
   // D1 Database
-  DB: any; // D1Database from Cloudflare Workers
+  flarebase: any; // D1Database from Cloudflare Workers
 
   // KV Storage
   flarebase_KV: any; // KVNamespace from Cloudflare Workers
@@ -15,6 +15,8 @@ export interface Bindings {
 
   // Environment Variables
   JWT_SECRET: string;
+  ADMIN_EMAIL?: string;
+  ADMIN_PASSWORD?: string;
 }
 
 // User types

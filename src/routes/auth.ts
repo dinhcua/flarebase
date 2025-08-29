@@ -42,14 +42,13 @@ authRouter.post("/login", zValidator("json", loginSchema), async (c) => {
 
   try {
     // Find user by email
-    const user = (await c.env.DB.prepare(
-      "SELECT * FROM system_users WHERE email = ?"
-    )
+    const user = (await c.env.flarebase
+      .prepare("SELECT * FROM system_users WHERE email = ?")
       .bind(email)
       .first()) as User | null;
 
     if (!user) {
-      return c.json({ error: "Invalid credentials" }, 401);
+      return c.json({ error: "User not found" }, 401);
     }
 
     // Compare password
@@ -88,9 +87,8 @@ authRouter.post("/register", zValidator("json", registerSchema), async (c) => {
 
   try {
     // Check if email already exists
-    const existingUser = await c.env.DB.prepare(
-      "SELECT id FROM system_users WHERE email = ?"
-    )
+    const existingUser = await c.env.flarebase
+      .prepare("SELECT id FROM system_users WHERE email = ?")
       .bind(data.email)
       .first();
 
@@ -102,10 +100,11 @@ authRouter.post("/register", zValidator("json", registerSchema), async (c) => {
     const hashedPassword = await hashPassword(data.password);
 
     // Create user
-    await c.env.DB.prepare(
-      `INSERT INTO system_users (id, email, password, name, role, created_at, updated_at) 
+    await c.env.flarebase
+      .prepare(
+        `INSERT INTO system_users (id, email, password, name, role, created_at, updated_at) 
        VALUES (?, ?, ?, ?, ?, ?, ?)`
-    )
+      )
       .bind(
         id,
         data.email,
@@ -158,9 +157,10 @@ authRouter.get("/me", async (c) => {
     const token = authHeader.substring(7);
     const payload = await verify(token, c.env.JWT_SECRET);
 
-    const user = (await c.env.DB.prepare(
-      "SELECT id, email, name, role, created_at, updated_at FROM system_users WHERE id = ?"
-    )
+    const user = (await c.env.flarebase
+      .prepare(
+        "SELECT id, email, name, role, created_at, updated_at FROM system_users WHERE id = ?"
+      )
       .bind(payload.id)
       .first()) as User | null;
 
@@ -174,6 +174,104 @@ authRouter.get("/me", async (c) => {
     return c.json({ error: "Invalid token" }, 401);
   }
 });
+
+// Initialize admin user endpoint (for first-time setup)
+authRouter.post("/init-admin", async (c) => {
+  try {
+    // Check if any admin user already exists
+    const existingAdmin = await c.env.flarebase
+      .prepare("SELECT id FROM system_users WHERE role = 'admin' LIMIT 1")
+      .first();
+
+    if (existingAdmin) {
+      return c.json(
+        {
+          message: "Admin user already exists",
+          success: false,
+        },
+        400
+      );
+    }
+
+    // Get admin credentials from environment
+    const adminEmail = c.env.ADMIN_EMAIL || "admin@flarebase.dev";
+    const adminPassword = c.env.ADMIN_PASSWORD || "admin123456";
+
+    // Hash the admin password
+    const hashedPassword = await hashPassword(adminPassword);
+    const adminId = crypto.randomUUID();
+
+    // Create admin user
+    await c.env.flarebase
+      .prepare(
+        `INSERT INTO system_users (id, email, password, name, role, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        adminId,
+        adminEmail,
+        hashedPassword,
+        "Administrator",
+        "admin",
+        new Date().toISOString(),
+        new Date().toISOString()
+      )
+      .run();
+
+    return c.json({
+      message: "Admin user created successfully",
+      email: adminEmail,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Admin initialization error:", error);
+    return c.json({ error: "Failed to initialize admin user" }, 500);
+  }
+});
+
+// Auto-initialize admin user function
+export const initializeAdminUser = async (env: Bindings): Promise<void> => {
+  try {
+    // Check if any admin user already exists
+    const existingAdmin = await env.flarebase
+      .prepare("SELECT id FROM system_users WHERE role = 'admin' LIMIT 1")
+      .first();
+
+    if (existingAdmin) {
+      console.log("Admin user already exists");
+      return;
+    }
+
+    // Get admin credentials from environment
+    const adminEmail = env.ADMIN_EMAIL || "admin@flarebase.dev";
+    const adminPassword = env.ADMIN_PASSWORD || "admin123456";
+
+    // Hash the admin password
+    const hashedPassword = await hashPassword(adminPassword);
+    const adminId = crypto.randomUUID();
+
+    // Create admin user
+    await env.flarebase
+      .prepare(
+        `INSERT INTO system_users (id, email, password, name, role, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        adminId,
+        adminEmail,
+        hashedPassword,
+        "Administrator",
+        "admin",
+        new Date().toISOString(),
+        new Date().toISOString()
+      )
+      .run();
+
+    console.log(`Admin user created: ${adminEmail}`);
+  } catch (error) {
+    console.error("Auto admin initialization error:", error);
+  }
+};
 
 // Logout endpoint (for completeness, though JWT is stateless)
 authRouter.post("/logout", (c) => {

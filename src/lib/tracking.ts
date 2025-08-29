@@ -27,7 +27,7 @@ export class Tracker {
   private async initUserId() {
     try {
       // Check if user is authenticated by checking token
-      const user = await this.flarebase.auth.me().catch(() => null);
+      const user = await this.flarebase.auth.getCurrentUser().catch(() => null);
       if (user) {
         this.userId = user.id;
       }
@@ -38,6 +38,18 @@ export class Tracker {
 
   // Tạo session ID để theo dõi phiên làm việc
   private generateSessionId(): string {
+    // Check if we're in browser environment
+    if (
+      typeof window === "undefined" ||
+      typeof sessionStorage === "undefined"
+    ) {
+      // Return a temporary ID for server-side rendering
+      return (
+        Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15)
+      );
+    }
+
     const existingId = sessionStorage.getItem("rb_session_id");
     if (existingId) return existingId;
 

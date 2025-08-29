@@ -1,99 +1,105 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { 
-  Card, 
-  Table, 
-  TableHead, 
-  TableRow, 
-  TableHeaderCell, 
-  TableBody, 
-  TableCell, 
-  Button,
-  Badge,
-  Text
-} from '@tremor/react';
-import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { toast } from 'sonner';
-import { getflarebaseClient } from '@/lib/flarebase';
-import { Collection } from '@/types';
-import { format } from 'date-fns';
-import CollectionFormModal from '@/components/collections/collection-form';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Edit, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { getFlarebaseClient } from "@/lib/flarebase";
+import { Collection } from "@/types";
+import { format } from "date-fns";
+import CollectionFormModal from "@/components/collections/collection-form";
 
 export default function CollectionsPage() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
+  const [selectedCollection, setSelectedCollection] =
+    useState<Collection | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   const fetchCollections = async () => {
     try {
-      const flarebase = getflarebaseClient();
-      const data = await flarebase.collections.getList();
+      const flarebase = getFlarebaseClient();
+      const data = await flarebase.collections.list();
       setCollections(data);
     } catch (error) {
-      console.error('Error fetching collections:', error);
-      toast.error('Không thể tải danh sách collections');
+      console.error("Error fetching collections:", error);
+      toast.error("Không thể tải danh sách collections");
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   useEffect(() => {
     fetchCollections();
   }, []);
-  
+
   const handleCreateClick = () => {
     setSelectedCollection(null);
     setIsFormOpen(true);
   };
-  
+
   const handleEditClick = (collection: Collection) => {
     setSelectedCollection(collection);
     setIsFormOpen(true);
   };
-  
+
   const handleDeleteClick = async (id: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa collection này?')) {
+    if (confirm("Bạn có chắc chắn muốn xóa collection này?")) {
       setIsDeleting(true);
       try {
-        const flarebase = getflarebaseClient();
+        const flarebase = getFlarebaseClient();
         await flarebase.collections.delete(id);
-        toast.success('Xóa collection thành công');
+        toast.success("Xóa collection thành công");
         fetchCollections();
       } catch (error) {
-        console.error('Error deleting collection:', error);
-        toast.error('Không thể xóa collection');
+        console.error("Error deleting collection:", error);
+        toast.error("Không thể xóa collection");
       } finally {
         setIsDeleting(false);
       }
     }
   };
-  
+
   const handleFormSubmit = async (data: any) => {
     try {
-      const flarebase = getflarebaseClient();
-      
+      const flarebase = getFlarebaseClient();
+
       if (selectedCollection) {
         // Update collection
-        await flarebase.collections.update(selectedCollection.id, data);
-        toast.success('Cập nhật collection thành công');
+        await flarebase.collections.update(selectedCollection.id, {
+          name: data.name,
+          schema: data.schema,
+        });
+        toast.success("Cập nhật collection thành công");
       } else {
         // Create collection
-        await flarebase.collections.create(data);
-        toast.success('Tạo collection thành công');
+        await flarebase.collections.create({
+          name: data.name,
+          schema: data.schema,
+        });
+        toast.success("Tạo collection thành công");
       }
-      
+
       setIsFormOpen(false);
       fetchCollections();
     } catch (error) {
-      console.error('Error saving collection:', error);
-      toast.error('Không thể lưu collection');
+      console.error("Error saving collection:", error);
+      toast.error("Không thể lưu collection");
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -101,46 +107,47 @@ export default function CollectionsPage() {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Collections</h1>
-          <p className="text-gray-500">Quản lý các collection trong cơ sở dữ liệu</p>
+          <p className="text-gray-500">
+            Quản lý các collection trong cơ sở dữ liệu
+          </p>
         </div>
-        <Button 
-          icon={PlusIcon} 
-          color="blue" 
-          onClick={handleCreateClick}
-        >
+        <Button onClick={handleCreateClick}>
+          <Plus className="mr-2 h-4 w-4" />
           Tạo Collection
         </Button>
       </div>
-      
+
       <Card>
         <Table>
-          <TableHead>
+          <TableHeader>
             <TableRow>
-              <TableHeaderCell>Tên</TableHeaderCell>
-              <TableHeaderCell>Records</TableHeaderCell>
-              <TableHeaderCell>Ngày tạo</TableHeaderCell>
-              <TableHeaderCell>Cập nhật lần cuối</TableHeaderCell>
-              <TableHeaderCell>Thao tác</TableHeaderCell>
+              <TableHead>Tên</TableHead>
+              <TableHead>Records</TableHead>
+              <TableHead>Ngày tạo</TableHead>
+              <TableHead>Cập nhật lần cuối</TableHead>
+              <TableHead>Thao tác</TableHead>
             </TableRow>
-          </TableHead>
+          </TableHeader>
           <TableBody>
             {collections.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center">
-                  <Text>Chưa có collection nào. Hãy tạo collection đầu tiên!</Text>
+                  <span>
+                    Chưa có collection nào. Hãy tạo collection đầu tiên!
+                  </span>
                 </TableCell>
               </TableRow>
             ) : (
               collections.map((collection) => (
                 <TableRow key={collection.id}>
                   <TableCell>
-                    <Link 
+                    <Link
                       href={`/collections/${collection.id}`}
                       className="font-medium text-blue-600 hover:underline"
                     >
@@ -148,34 +155,39 @@ export default function CollectionsPage() {
                     </Link>
                   </TableCell>
                   <TableCell>
-                    <Badge color="blue" size="sm">
-                      {collection.recordCount || 0} records
+                    <Badge variant="secondary">
+                      {(collection as any).recordCount || 0} records
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(collection.created_at), 'dd/MM/yyyy HH:mm')}
+                    {format(
+                      new Date(collection.created_at),
+                      "dd/MM/yyyy HH:mm"
+                    )}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(collection.updated_at), 'dd/MM/yyyy HH:mm')}
+                    {format(
+                      new Date(collection.updated_at),
+                      "dd/MM/yyyy HH:mm"
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button 
-                        size="xs" 
-                        variant="secondary" 
-                        icon={PencilIcon}
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => handleEditClick(collection)}
                       >
+                        <Edit className="mr-1 h-4 w-4" />
                         Sửa
                       </Button>
-                      <Button 
-                        size="xs" 
-                        color="red" 
-                        variant="secondary" 
-                        icon={TrashIcon}
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => handleDeleteClick(collection.id)}
                         disabled={isDeleting}
                       >
+                        <Trash2 className="mr-1 h-4 w-4" />
                         Xóa
                       </Button>
                     </div>
@@ -186,7 +198,7 @@ export default function CollectionsPage() {
           </TableBody>
         </Table>
       </Card>
-      
+
       <CollectionFormModal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}

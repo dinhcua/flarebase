@@ -5,6 +5,8 @@ workers_dev = true
 
 [vars]
 JWT_SECRET = "change_this_in_production"
+ADMIN_EMAIL = "admin@flarebase.dev"
+ADMIN_PASSWORD = "admin123456"
 
 [[d1_databases]]
 binding = "flarebase"

@@ -90,9 +90,26 @@ wrangler r2 bucket create flarebase-files
 
 5. Cập nhật wrangler.toml với các ID đã tạo ở bước 4
 
-6. Deploy:
+6. Cấu hình admin user trong wrangler.toml:
+```toml
+[vars]
+JWT_SECRET = "your-secret-key-here"
+ADMIN_EMAIL = "admin@yourdomain.com"
+ADMIN_PASSWORD = "your-secure-password"
+```
+
+7. Deploy:
 ```bash
 npm run deploy
+```
+
+8. Khởi tạo admin user (tùy chọn - tự động chạy khi deploy):
+```bash
+# Sử dụng script setup
+FLAREBASE_URL=https://flarebase.kuquaysut.workers.dev node scripts/setup-admin.js
+
+# Hoặc gọi API trực tiếp
+curl -X POST https://flarebase.kuquaysut.workers.dev/api/auth/init-admin
 ````
 
 ## ⚙️ Cấu hình
