@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/davidluong25/flarebase/releases"><img src="https://img.shields.io/github/v/release/davidluong25/flarebase" alt="Latest Release"></a>
-  <a href="https://github.com/davidluong25/flarebase/blob/main/LICENSE"><img src="https://img.shields.io/github/license/davidluong25/flarebase" alt="License"></a>
+  <a href="https://github.com/dinhcua/flarebase/releases"><img src="https://img.shields.io/github/v/release/dinhcua/flarebase" alt="Latest Release"></a>
+  <a href="https://github.com/dinhcua/flarebase/blob/main/LICENSE"><img src="https://img.shields.io/github/license/dinhcua/flarebase" alt="License"></a>
   <a href="https://discord.gg/flarebase"><img src="https://img.shields.io/discord/1234567890?color=7289da&label=Discord&logo=discord" alt="Discord"></a>
 </p>
 
@@ -52,22 +52,26 @@ flarebase được xây dựng hoàn toàn trên các dịch vụ serverless c�
 ### Cài đặt
 
 1. Clone repository:
+
    ```bash
-   git clone https://github.com/davidluong25/flarebase.git
+   git clone https://github.com/dinhcua/flarebase.git
    cd flarebase
    ```
 
 2. Cài đặt dependencies:
+
    ```bash
    npm install
    ```
 
 3. Đăng nhập vào Cloudflare:
+
    ```bash
    wrangler login
    ```
 
 4. Tạo các dịch vụ cần thiết:
+
    ```bash
    # Tạo D1 database
    wrangler d1 create flarebase
@@ -89,6 +93,7 @@ flarebase được xây dựng hoàn toàn trên các dịch vụ serverless c�
 ## ⚙️ Cấu hình
 
 ### wrangler.toml
+
 ```toml
 name = "flarebase"
 compatibility_date = "2025-08-01"
@@ -137,17 +142,19 @@ npm install flarebase
 ### Kết nối đến backend
 
 ```typescript
-import flarebase from 'flarebase';
+import flarebase from "flarebase";
 
 // Khởi tạo client
-const client = new flarebase('https://your-flarebase-worker.your-account.workers.dev');
+const client = new flarebase(
+  "https://your-flarebase-worker.your-account.workers.dev"
+);
 
 // Đăng nhập
-const { user, token } = await client.auth.login('user@example.com', 'password');
+const { user, token } = await client.auth.login("user@example.com", "password");
 
 // Tạo instance mới với token
 const authenticatedClient = new flarebase(
-  'https://your-flarebase-worker.your-account.workers.dev',
+  "https://your-flarebase-worker.your-account.workers.dev",
   token
 );
 ```
@@ -167,44 +174,44 @@ interface Post {
 }
 
 // Lấy danh sách
-const { items } = await client.collection<Post>('posts').getList({
-  filter: 'published=true',
-  sort: '-created_at',
+const { items } = await client.collection<Post>("posts").getList({
+  filter: "published=true",
+  sort: "-created_at",
   page: 1,
-  perPage: 10
+  perPage: 10,
 });
 
 // Lấy một record
-const post = await client.collection<Post>('posts').getOne('post_id');
+const post = await client.collection<Post>("posts").getOne("post_id");
 
 // Tạo record mới
-const newPost = await client.collection<Post>('posts').create({
-  title: 'Hello World',
-  content: 'This is my first post',
+const newPost = await client.collection<Post>("posts").create({
+  title: "Hello World",
+  content: "This is my first post",
   published: false,
-  author_id: user.id
+  author_id: user.id,
 });
 
 // Cập nhật record
-await client.collection<Post>('posts').update('post_id', {
-  published: true
+await client.collection<Post>("posts").update("post_id", {
+  published: true,
 });
 
 // Xóa record
-await client.collection<Post>('posts').delete('post_id');
+await client.collection<Post>("posts").delete("post_id");
 ```
 
 ### Realtime Subscriptions
 
 ```typescript
 // Subscribe để nhận updates theo thời gian thực
-const subscription = client.realtime.subscribe<Post>('posts', (event) => {
-  if (event.action === 'create') {
-    console.log('New post created:', event.record);
-  } else if (event.action === 'update') {
-    console.log('Post updated:', event.record);
-  } else if (event.action === 'delete') {
-    console.log('Post deleted, ID:', event.id);
+const subscription = client.realtime.subscribe<Post>("posts", (event) => {
+  if (event.action === "create") {
+    console.log("New post created:", event.record);
+  } else if (event.action === "update") {
+    console.log("Post updated:", event.record);
+  } else if (event.action === "delete") {
+    console.log("Post deleted, ID:", event.id);
   }
 });
 
@@ -216,23 +223,23 @@ subscription.unsubscribe();
 
 ```typescript
 // Upload file
-const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+const fileInput = document.getElementById("fileInput") as HTMLInputElement;
 const file = fileInput.files?.[0];
 
 if (file) {
   const result = await client.storage.upload(file, {
     isPublic: true,
-    folder: 'images'
+    folder: "images",
   });
-  
-  console.log('Uploaded file:', result);
-  console.log('File URL:', result.url);
+
+  console.log("Uploaded file:", result);
+  console.log("File URL:", result.url);
 }
 
 // Lấy danh sách files
 const { items } = await client.storage.getList({
-  prefix: 'images/',
-  perPage: 20
+  prefix: "images/",
+  perPage: 20,
 });
 ```
 
@@ -241,14 +248,14 @@ const { items } = await client.storage.getList({
 ```typescript
 // Subscribe đến thay đổi trạng thái người dùng
 const presenceSubscription = client.presence.subscribeToPresence((event) => {
-  if (event.type === 'statusChange') {
+  if (event.type === "statusChange") {
     console.log(`User ${event.user.id} is now ${event.user.status}`);
   }
 });
 
 // Cập nhật trạng thái
-await client.presence.updateStatus('busy', {
-  currentPage: '/dashboard'
+await client.presence.updateStatus("busy", {
+  currentPage: "/dashboard",
 });
 
 // Lấy danh sách users online
@@ -258,12 +265,14 @@ const { users } = await client.presence.getOnlineUsers();
 ## 🛠️ API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/register` - Đăng ký người dùng mới
 - `POST /api/auth/login` - Đăng nhập
 - `POST /api/auth/logout` - Đăng xuất
 - `GET /api/auth/me` - Lấy thông tin người dùng hiện tại
 
 ### Collections
+
 - `GET /api/collections` - Lấy danh sách collections
 - `POST /api/collections` - Tạo collection mới
 - `GET /api/collections/:id` - Lấy thông tin collection
@@ -276,6 +285,7 @@ const { users } = await client.presence.getOnlineUsers();
 - `DELETE /api/collections/:collection/records/:id` - Xóa record
 
 ### Storage
+
 - `GET /api/storage` - Lấy danh sách files
 - `POST /api/storage` - Upload file
 - `GET /api/storage/:id` - Lấy thông tin file
@@ -283,18 +293,22 @@ const { users } = await client.presence.getOnlineUsers();
 - `DELETE /api/storage/:id` - Xóa file
 
 ### Realtime
+
 - `GET /api/realtime` - Lấy WebSocket URL cho realtime
 
 ### Presence
+
 - `GET /api/presence/connect` - Lấy WebSocket URL cho presence
 - `GET /api/presence/users` - Lấy danh sách users online
 - `POST /api/presence/status` - Cập nhật trạng thái
 
 ### Backup
+
 - `GET /api/backup/export` - Export dữ liệu
 - `POST /api/backup/import` - Import dữ liệu
 
 ### Settings
+
 - `GET /api/settings` - Lấy cấu hình hệ thống
 - `PUT /api/settings` - Cập nhật cấu hình
 - `POST /api/settings/reset` - Reset cấu hình về mặc định
@@ -349,10 +363,10 @@ flarebase được thiết kế cho cả dự án cá nhân và doanh nghiệp. 
 - [Cloudflare](https://cloudflare.com) vì đã cung cấp nền tảng tuyệt vời
 - [Hono](https://github.com/honojs/hono) cho framework HTTP hiệu quả
 - [Tremor](https://www.tremor.so/) cho các components UI
-- Tất cả các [contributors](https://github.com/davidluong25/flarebase/graphs/contributors) đã giúp xây dựng flarebase
+- Tất cả các [contributors](https://github.com/dinhcua/flarebase/graphs/contributors) đã giúp xây dựng flarebase
 
 ---
 
 <p align="center">
-  Made with ❤️ by <a href="https://github.com/davidluong25">davidluong25</a>
+  Made with ❤️ by <a href="https://github.com/dinhcua">dinhcua</a>
 </p>

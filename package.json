@@ -21,7 +21,7 @@
     "firebase-alternative",
     "supabase-alternative"
   ],
-  "author": "davidluong25",
+  "author": "dinhcua",
   "license": "MIT",
   "dependencies": {
     "@hono/zod-validator": "^0.2.2",
