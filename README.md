@@ -1,4 +1,4 @@
-# flarebase
+# FlareBase
 
 <p align="center">
   <img src="https://your-site.com/path-to-logo.png" height="128" alt="flarebase Logo">
@@ -77,18 +77,23 @@ flarebase được xây dựng hoàn toàn trên các dịch vụ serverless c�
    wrangler d1 create flarebase
 
    # Tạo KV namespace
-   wrangler kv:namespace create flarebase_KV
-
-   # Tạo R2 bucket
-   wrangler r2 bucket create flarebase-files
+   wrangler kv namespace create flarebase_KV
    ```
+
+Enbale cloudflare R2 bang UI Dashboard
+
+# Tạo R2 bucket
+
+wrangler r2 bucket create flarebase-files
+
+````
 
 5. Cập nhật wrangler.toml với các ID đã tạo ở bước 4
 
 6. Deploy:
-   ```bash
-   npm run deploy
-   ```
+```bash
+npm run deploy
+````
 
 ## ⚙️ Cấu hình
 

@@ -43,7 +43,10 @@ export class UserPresence {
     }
 
     const webSocketPair = new WebSocketPair();
-    const [client, server] = Object.values(webSocketPair) as [WebSocket, WebSocket];
+    const [client, server] = Object.values(webSocketPair) as [
+      WebSocket,
+      WebSocket
+    ];
 
     server.accept();
 
@@ -226,7 +229,8 @@ export class UserPresence {
     for (const [sessionId, session] of this.sessions) {
       if (sessionId === excludeSession) continue;
 
-      if (session.readyState === 1) { // WebSocket.OPEN
+      if (session.readyState === 1) {
+        // WebSocket.OPEN
         try {
           session.send(message);
         } catch (error) {

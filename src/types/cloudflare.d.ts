@@ -10,9 +10,18 @@ declare global {
     accept(): void;
     send(message: string): void;
     close(code?: number, reason?: string): void;
-    addEventListener(type: "message", listener: (event: MessageEvent) => void): void;
-    addEventListener(type: "close", listener: (event: CloseEvent) => void): void;
-    addEventListener(type: "error", listener: (event: ErrorEvent) => void): void;
+    addEventListener(
+      type: "message",
+      listener: (event: MessageEvent) => void
+    ): void;
+    addEventListener(
+      type: "close",
+      listener: (event: CloseEvent) => void
+    ): void;
+    addEventListener(
+      type: "error",
+      listener: (event: ErrorEvent) => void
+    ): void;
     readyState: number;
     readonly CONNECTING: 0;
     readonly OPEN: 1;

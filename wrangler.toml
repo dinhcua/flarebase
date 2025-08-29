@@ -7,14 +7,13 @@ workers_dev = true
 JWT_SECRET = "change_this_in_production"
 
 [[d1_databases]]
-binding = "DB"
+binding = "flarebase"
 database_name = "flarebase"
-database_id = "YOUR_D1_DATABASE_ID"
+database_id = "4979ad43-039b-4b40-8da7-57f847eaef5f"
 
 [[kv_namespaces]]
 binding = "flarebase_KV"
-id = "YOUR_KV_NAMESPACE_ID"
-preview_id = "YOUR_PREVIEW_KV_NAMESPACE_ID"
+id = "21018c1b5938484e84ad8109fbd93820"
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
