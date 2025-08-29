@@ -1,12 +1,12 @@
-import { DurableObject } from "@cloudflare/workers-types";
 import { PresenceUser, PresenceEvent } from "../types";
+import "../types/cloudflare";
 
-export class UserPresence implements DurableObject {
+export class UserPresence {
   private sessions: Map<string, WebSocket> = new Map();
   private users: Map<string, PresenceUser> = new Map();
   private sessionToUser: Map<string, string> = new Map();
 
-  constructor(private ctx: DurableObjectState, private env: any) {
+  constructor(private ctx: any, private env: any) {
     // Restore users from storage
     this.ctx.blockConcurrencyWhile(async () => {
       const stored = await this.ctx.storage.get("users");
@@ -18,7 +18,7 @@ export class UserPresence implements DurableObject {
     });
   }
 
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: any): Promise<Response> {
     const url = new URL(request.url);
 
     if (url.pathname === "/websocket") {
@@ -43,7 +43,7 @@ export class UserPresence implements DurableObject {
     }
 
     const webSocketPair = new WebSocketPair();
-    const [client, server] = Object.values(webSocketPair);
+    const [client, server] = Object.values(webSocketPair) as [WebSocket, WebSocket];
 
     server.accept();
 
@@ -72,7 +72,7 @@ export class UserPresence implements DurableObject {
       await this.persistUsers();
     }
 
-    server.addEventListener("message", (event) => {
+    server.addEventListener("message", (event: any) => {
       try {
         const data = JSON.parse(event.data as string);
         this.handleMessage(sessionId, userId, data);
@@ -91,7 +91,7 @@ export class UserPresence implements DurableObject {
       this.handleUserDisconnect(sessionId, userId);
     });
 
-    server.addEventListener("error", (error) => {
+    server.addEventListener("error", (error: any) => {
       console.error("WebSocket error:", error);
       this.handleUserDisconnect(sessionId, userId);
     });
@@ -120,7 +120,7 @@ export class UserPresence implements DurableObject {
     return new Response(null, {
       status: 101,
       webSocket: client,
-    });
+    } as any);
   }
 
   private async handleMessage(sessionId: string, userId: string, data: any) {
@@ -220,14 +220,13 @@ export class UserPresence implements DurableObject {
 
   private broadcastEvent(event: PresenceEvent, excludeSession?: string) {
     const message = JSON.stringify({
-      type: "presenceEvent",
       ...event,
     });
 
     for (const [sessionId, session] of this.sessions) {
       if (sessionId === excludeSession) continue;
 
-      if (session.readyState === WebSocket.READY_STATE_OPEN) {
+      if (session.readyState === 1) { // WebSocket.OPEN
         try {
           session.send(message);
         } catch (error) {

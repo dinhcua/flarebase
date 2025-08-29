@@ -1,13 +1,13 @@
-import { DurableObject } from "@cloudflare/workers-types";
 import { RealtimeEvent } from "../types";
+import "../types/cloudflare";
 
-export class RealtimeSubscription implements DurableObject {
+export class RealtimeSubscription {
   private sessions: Map<string, WebSocket> = new Map();
   private subscriptions: Map<string, Set<string>> = new Map(); // collection -> sessionIds
 
-  constructor(private ctx: DurableObjectState, private env: any) {}
+  constructor(private ctx: any, private env: any) {}
 
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: any): Promise<Response> {
     const url = new URL(request.url);
 
     if (url.pathname === "/websocket") {
@@ -28,14 +28,14 @@ export class RealtimeSubscription implements DurableObject {
     }
 
     const webSocketPair = new WebSocketPair();
-    const [client, server] = Object.values(webSocketPair);
+    const [client, server] = Object.values(webSocketPair) as [WebSocket, WebSocket];
 
     server.accept();
 
     const sessionId = crypto.randomUUID();
     this.sessions.set(sessionId, server);
 
-    server.addEventListener("message", (event) => {
+    server.addEventListener("message", (event: any) => {
       try {
         const data = JSON.parse(event.data as string);
         this.handleMessage(sessionId, data);
@@ -54,7 +54,7 @@ export class RealtimeSubscription implements DurableObject {
       this.handleDisconnect(sessionId);
     });
 
-    server.addEventListener("error", (error) => {
+    server.addEventListener("error", (error: any) => {
       console.error("WebSocket error:", error);
       this.handleDisconnect(sessionId);
     });
@@ -71,7 +71,7 @@ export class RealtimeSubscription implements DurableObject {
     return new Response(null, {
       status: 101,
       webSocket: client,
-    });
+    } as any);
   }
 
   private handleMessage(sessionId: string, data: any) {
@@ -172,7 +172,7 @@ export class RealtimeSubscription implements DurableObject {
 
       for (const sessionId of subscribers) {
         const session = this.sessions.get(sessionId);
-        if (session && session.readyState === WebSocket.READY_STATE_OPEN) {
+        if (session && session.readyState === 1) { // WebSocket.OPEN
           try {
             session.send(message);
             delivered++;

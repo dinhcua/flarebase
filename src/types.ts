@@ -1,3 +1,11 @@
+// Global types for Cloudflare Workers
+declare global {
+  class WebSocketPair {
+    0: WebSocket;
+    1: WebSocket;
+  }
+}
+
 // Cloudflare Worker Environment Bindings
 export interface Bindings {
   // D1 Database

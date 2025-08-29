@@ -267,3 +267,4 @@ npm test
 4. Implement proper CORS policy
 
 Chúc mừng! Bạn đã setup thành công flarebase trên Cloudflare! 🎉
+

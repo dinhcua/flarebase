@@ -19,3 +19,4 @@ export interface SchemaProperty {
   required?: boolean;
   description?: string;
 }
+
