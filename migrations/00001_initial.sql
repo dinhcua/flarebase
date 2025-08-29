@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS files (
     type TEXT NOT NULL,
     size INTEGER NOT NULL,
     path TEXT NOT NULL,
+    is_public INTEGER NOT NULL DEFAULT 0,
+    user_id TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -41,3 +43,25 @@ CREATE TABLE IF NOT EXISTS tracking (
     user_id TEXT,
     timestamp TEXT NOT NULL
 );
+
+-- Create events table for detailed analytics
+CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_name TEXT NOT NULL,
+    event_category TEXT,
+    event_label TEXT,
+    event_value INTEGER,
+    properties TEXT, -- JSON string
+    user_id TEXT,
+    session_id TEXT,
+    timestamp TEXT NOT NULL,
+    url TEXT,
+    user_agent TEXT
+);
+
+-- Indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_files_user_id ON files(user_id);
+CREATE INDEX IF NOT EXISTS idx_files_public ON files(is_public);
+CREATE INDEX IF NOT EXISTS idx_tracking_timestamp ON tracking(timestamp);
+CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_events_name ON events(event_name);

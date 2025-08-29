@@ -6,8 +6,8 @@ export interface Bindings {
   // KV Storage
   flarebase_KV: any; // KVNamespace from Cloudflare Workers
 
-  // R2 Storage
-  R2_BUCKET: any; // R2Bucket from Cloudflare Workers
+  // R2 Storage (optional - needs to be enabled in dashboard)
+  R2_BUCKET?: any; // R2Bucket from Cloudflare Workers
 
   // Durable Objects
   flarebase_REALTIME: any; // DurableObjectNamespace from Cloudflare Workers
